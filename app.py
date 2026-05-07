@@ -7,15 +7,20 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = 'super_secret_exam_key' 
 
+# --- 1. Set up Intrusion Logging ---
+# This file is what we will read and display in the dashboard
 logging.basicConfig(filename='security.log', level=logging.WARNING, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+# --- 2. Set up Flask-Login ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Admin Account
-users = {"admin": generate_password_hash("root")}
+# Admin Account Credentials
+users = {
+    "admin": generate_password_hash("password123") 
+}
 
 class User(UserMixin):
     def __init__(self, username):
@@ -26,6 +31,8 @@ def load_user(user_id):
     if user_id in users:
         return User(user_id)
     return None
+
+# --- 3. Routes ---
 
 @app.route('/')
 def index():
@@ -43,6 +50,7 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
+            # THIS WRITES TO THE LOG FILE
             logging.warning(f"INTRUSION ALERT: Failed login attempt from IP: {client_ip} using username: {username}")
             flash('Invalid credentials')
     
@@ -52,6 +60,21 @@ def login():
 @login_required
 def dashboard():
     return render_template('camera.html')
+
+# NEW: This route allows the dashboard to "read" the real security.log file
+@app.route('/get_logs')
+@login_required
+def get_logs():
+    try:
+        if os.path.exists('security.log'):
+            with open('security.log', 'r') as f:
+                lines = f.readlines()
+                # Return the last 30 lines to keep it clean
+                return "".join(lines[-30:])
+        else:
+            return "System Initialized. No security events recorded yet."
+    except Exception as e:
+        return f"Error accessing logs: {str(e)}"
 
 @app.route('/logout')
 @login_required
