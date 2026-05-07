@@ -19,7 +19,7 @@ login_manager.login_view = 'login'
 
 # Admin Account Credentials
 users = {
-    "admin": generate_password_hash("password123") 
+    "admin": generate_password_hash("root") 
 }
 
 class User(UserMixin):
