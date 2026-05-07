@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Web-Based Surveillance Access System
-</title>
+    <title>Secure Web-Based Surveillance Access System</title>
     <style>
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #0d0d0d; color: #e0e0e0; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background: #161616; padding: 12px 25px; border-bottom: 2px solid #222; }
@@ -28,7 +27,6 @@
         .sidebar { background: #222; padding: 20px; border-radius: 6px; border: 1px solid #333; }
         .sidebar h4 { margin-top: 0; color: #3a86ff; font-size: 14px; text-transform: uppercase; }
 
-        /* REAL LOG CONTAINER */
         #log-display { 
             background: #050505; 
             color: #00ff41; 
@@ -36,11 +34,11 @@
             height: 400px; 
             overflow-y: auto; 
             font-family: 'Courier New', monospace; 
-            font-size: 13px; 
+            font-size: 14px; 
             border-radius: 4px; 
             border: 1px solid #222; 
             white-space: pre-wrap;
-            line-height: 1.6;
+            line-height: 1.8;
         }
     </style>
 </head>
@@ -54,7 +52,7 @@
     <div class="tab-container">
         <div class="tabs">
             <button class="tab-link active" onclick="openTab(event, 'Camera')">VIDEO FEED</button>
-            <button class="tab-link" onclick="openTab(event, 'Logs')">SECURITY LOGS</button>
+            <button class="tab-link" onclick="openTab(event, 'Logs')">AUDIT LOGS</button>
         </div>
 
         <div id="Camera" class="tab-content" style="display: block;">
@@ -69,17 +67,19 @@
                 <div class="sidebar">
                     <h4>Network Intel</h4>
                     <p>Status: <span style="color:#00ff41">READY</span></p>
+                    <p>User: <span style="color:#3a86ff">admin</span></p>
                     <p style="font-size: 13px; color: #888;">Protocol: RTSP/IP<br>Port: 80/554<br>Encryption: TLS 1.3</p>
                     <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
                     <h4>Diagnostics</h4>
                     <p style="font-size: 12px; color: #aaa;">Ping 192.168.1.10... No Reply</p>
+                    <p style="font-size: 12px; color: #aaa;">Waiting for RJ45 Connection</p>
                 </div>
             </div>
         </div>
 
         <div id="Logs" class="tab-content">
-            <h3 style="margin-top: 0;">Live System Audit Trail</h3>
-            <div id="log-display">Fetching latest security events...</div>
+            <h3 style="margin-top: 0;">User Activity & Access History</h3>
+            <div id="log-display">Loading audit trail...</div>
         </div>
     </div>
 
@@ -96,26 +96,25 @@
             if (tabName === 'Logs') { updateLogs(); }
         }
 
-        // Fetch real data from the /get_logs route in app.py
         function updateLogs() {
             fetch('/get_logs')
                 .then(response => response.text())
                 .then(data => {
                     const display = document.getElementById('log-display');
                     display.textContent = data;
-                    display.scrollTop = display.scrollHeight; // Keep latest logs visible
+                    display.scrollTop = display.scrollHeight; 
                 })
                 .catch(err => {
                     document.getElementById('log-display').textContent = "Error loading logs: " + err;
                 });
         }
 
-        // Automatically refresh logs every 5 seconds when the tab is open
+        // Fetch logs every 3 seconds while tab is active for a more "live" feel
         setInterval(() => {
             if (document.getElementById('Logs').style.display === 'block') {
                 updateLogs();
             }
-        }, 5000);
+        }, 3000);
     </script>
 </body>
 </html>
