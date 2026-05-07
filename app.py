@@ -1,25 +1,28 @@
 import os
-import logging
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_exam_key' 
+app.secret_key = 'soc_exam_secret_key'
 
-# --- 1. Set up Intrusion Logging ---
-# This file is what we will read and display in the dashboard
-logging.basicConfig(filename='security.log', level=logging.WARNING, 
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# --- 1. Audit Logging Logic ---
+LOG_FILE = 'audit.log'
 
-# --- 2. Set up Flask-Login ---
+def write_audit_log(message):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_FILE, 'a') as f:
+        f.write(f"[{timestamp}] {message}\n")
+
+# --- 2. Flask-Login Setup ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Admin Account Credentials
+# Updated Credentials: admin / root
 users = {
-    "admin": generate_password_hash("root") 
+    "admin": generate_password_hash("root")
 }
 
 class User(UserMixin):
@@ -28,9 +31,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    if user_id in users:
-        return User(user_id)
-    return None
+    return User(user_id) if user_id in users else None
 
 # --- 3. Routes ---
 
@@ -48,10 +49,10 @@ def login():
         if username in users and check_password_hash(users.get(username), password):
             user = User(username)
             login_user(user)
+            write_audit_log(f"LOGIN SUCCESS: User '{username}' accessed system from {client_ip}")
             return redirect(url_for('dashboard'))
         else:
-            # THIS WRITES TO THE LOG FILE
-            logging.warning(f"INTRUSION ALERT: Failed login attempt from IP: {client_ip} using username: {username}")
+            write_audit_log(f"LOGIN ATTEMPT: Failed login for '{username}' from {client_ip}")
             flash('Invalid credentials')
     
     return render_template('login.html')
@@ -59,26 +60,26 @@ def login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    write_audit_log(f"ACTIVITY: User '{current_user.id}' viewing Live Video Feed")
     return render_template('camera.html')
 
-# NEW: This route allows the dashboard to "read" the real security.log file
 @app.route('/get_logs')
 @login_required
 def get_logs():
     try:
-        if os.path.exists('security.log'):
-            with open('security.log', 'r') as f:
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, 'r') as f:
                 lines = f.readlines()
-                # Return the last 30 lines to keep it clean
-                return "".join(lines[-30:])
-        else:
-            return "System Initialized. No security events recorded yet."
+                return "".join(lines[-20:]) # Show last 20 clean entries
+        return "System Initialized. Awaiting activity..."
     except Exception as e:
-        return f"Error accessing logs: {str(e)}"
+        return f"Log Error: {str(e)}"
 
 @app.route('/logout')
 @login_required
 def logout():
+    user_name = current_user.id
+    write_audit_log(f"LOGOUT: User '{user_name}' disconnected.")
     logout_user()
     return redirect(url_for('login'))
 
