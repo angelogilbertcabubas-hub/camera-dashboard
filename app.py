@@ -1,13 +1,14 @@
+import os
 import logging
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_exam_key' # You can change this if you want
+app.secret_key = 'super_secret_exam_key' 
 
 # --- 1. Set up Intrusion Logging ---
-# This creates the security.log file to catch your professor's attempts
+# Captures failed attempts in security.log (viewable in Railway "View Logs")
 logging.basicConfig(filename='security.log', level=logging.WARNING, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -16,9 +17,9 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Mock Database for the Admin user
+# Admin Account Credentials
 users = {
-    "admin": generate_password_hash("password123") # Change "password123" to your actual secure password
+    "admin": generate_password_hash("password123") 
 }
 
 class User(UserMixin):
@@ -31,7 +32,7 @@ def load_user(user_id):
         return User(user_id)
     return None
 
-# --- 3. The Login Route ---
+# --- 3. Routes ---
 @app.route('/', methods=['GET'])
 def index():
     return redirect(url_for('login'))
@@ -46,20 +47,17 @@ def login():
         if username in users and check_password_hash(users.get(username), password):
             user = User(username)
             login_user(user)
-            logging.info(f"SUCCESSFUL LOGIN from IP: {client_ip}")
             return redirect(url_for('dashboard'))
         else:
-            # THIS IS THE HONEYPOT LOG: Catching the failed attempts
+            # HONEYPOT LOG: This is what your professor needs to see in the logs!
             logging.warning(f"INTRUSION ALERT: Failed login attempt from IP: {client_ip} using username: {username}")
             flash('Invalid credentials')
     
     return render_template('login.html')
 
-# --- 4. The Protected Dashboard ---
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Only authenticated users can see this page
     return render_template('camera.html')
 
 @app.route('/logout')
@@ -69,5 +67,6 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    # Bind to 0.0.0.0 so the whole network can access the site
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Railway assigns a port automatically via environment variables
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
