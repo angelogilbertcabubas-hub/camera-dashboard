@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
@@ -7,82 +8,65 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'soc_exam_secret_key'
 
-# --- 1. Audit Logging Logic ---
-LOG_FILE = 'audit.log'
+# --- 1. Database Configuration ---
+# Railway provides the DATABASE_URL automatically in production
+app.config['SQLALCHEMY_DATABASE_VALUE'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-def write_audit_log(message):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(LOG_FILE, 'a') as f:
-        f.write(f"[{timestamp}] {message}\n")
+# --- 2. Database Models (Your Tables) ---
+class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    action = db.Column(db.String(200), nullable=False)
+    username = db.Column(db.String(50))
+    ip_address = db.Column(db.String(50))
 
-# --- 2. Flask-Login Setup ---
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+# Create the tables in the database
+with app.app_context():
+    db.create_all()
 
-# Updated Credentials: admin / root
-users = {
-    "admin": generate_password_hash("root")
-}
+# --- 3. Clean Logging Function ---
+def log_event(action, user=None):
+    new_log = AuditLog(
+        action=action, 
+        username=user if user else "System", 
+        ip_address=request.remote_addr
+    )
+    db.session.add(new_log)
+    db.session.commit()
 
-class User(UserMixin):
-    def __init__(self, username):
-        self.id = username
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User(user_id) if user_id in users else None
-
-# --- 3. Routes ---
-
-@app.route('/')
-def index():
-    return redirect(url_for('login'))
-
+# --- 4. Updated Login Route ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        client_ip = request.remote_addr
-
-        if username in users and check_password_hash(users.get(username), password):
+        
+        # Using your admin / root credentials
+        if username == "admin" and password == "root":
             user = User(username)
             login_user(user)
-            write_audit_log(f"LOGIN SUCCESS: User '{username}' accessed system from {client_ip}")
+            log_event("LOGIN SUCCESS", user=username)
             return redirect(url_for('dashboard'))
         else:
-            write_audit_log(f"LOGIN ATTEMPT: Failed login for '{username}' from {client_ip}")
+            log_event(f"FAILED LOGIN ATTEMPT: {username}")
             flash('Invalid credentials')
-    
     return render_template('login.html')
 
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    write_audit_log(f"ACTIVITY: User '{current_user.id}' viewing Live Video Feed")
-    return render_template('camera.html')
-
+# --- 5. Updated Log Retrieval ---
 @app.route('/get_logs')
 @login_required
 def get_logs():
-    try:
-        if os.path.exists(LOG_FILE):
-            with open(LOG_FILE, 'r') as f:
-                lines = f.readlines()
-                return "".join(lines[-20:]) # Show last 20 clean entries
-        return "System Initialized. Awaiting activity..."
-    except Exception as e:
-        return f"Log Error: {str(e)}"
+    # Query the last 50 logs from the Postgres table
+    logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(50).all()
+    
+    log_output = ""
+    for entry in logs:
+        # Format: [Time] USER - ACTION (IP)
+        time_str = entry.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        log_output += f"[{time_str}] {entry.username} - {entry.action} ({entry.ip_address})\n"
+    
+    return log_output
 
-@app.route('/logout')
-@login_required
-def logout():
-    user_name = current_user.id
-    write_audit_log(f"LOGOUT: User '{user_name}' disconnected.")
-    logout_user()
-    return redirect(url_for('login'))
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+# ... Keep the rest of your User class and logout routes ...
