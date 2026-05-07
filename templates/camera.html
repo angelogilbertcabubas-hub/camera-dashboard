@@ -3,174 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Security Dashboard</title>
+    <title>SOC Dashboard</title>
     <style>
-        /* Base Dark Theme */
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212;
-            color: #ffffff;
-        }
-
-        /* Top Navigation Bar */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #1e1e1e;
-            padding: 15px 30px;
-            border-bottom: 1px solid #333;
-        }
-        .navbar h2 { margin: 0; font-size: 20px; }
-        .logout-btn {
-            background-color: #e63946;
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        /* Tab Container */
-        .tab-container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 30px auto;
-        }
-
-        /* The Clickable Tabs */
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #333;
-            margin-bottom: 20px;
-        }
-        .tab-link {
-            background: none;
-            color: #888;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .tab-link:hover { color: #fff; }
-        .tab-link.active {
-            color: #3a86ff;
-            border-bottom: 3px solid #3a86ff;
-        }
-
-        /* Content Areas */
-        .tab-content {
-            display: none; /* Hidden by default */
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            min-height: 400px;
-        }
-
-        /* Camera Layout */
-        .camera-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-        .video-feed {
-            background-color: #000;
-            height: 450px;
-            border-radius: 4px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #555;
-            border: 1px solid #444;
-        }
-        .status-panel {
-            background-color: #252525;
-            padding: 20px;
-            border-radius: 4px;
-        }
-        .status-good { color: #2a9d8f; font-weight: bold; }
-
-        /* Logs Layout */
-        .log-box {
-            background-color: #0d0d0d;
-            font-family: monospace;
-            color: #00ff00;
-            padding: 15px;
-            border-radius: 4px;
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #333;
-        }
+        body { margin: 0; font-family: sans-serif; background-color: #121212; color: #fff; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; background: #1e1e1e; padding: 15px 30px; border-bottom: 1px solid #333; }
+        .logout-btn { background: #e63946; color: white; text-decoration: none; padding: 8px 16px; border-radius: 4px; }
+        .tab-container { width: 90%; margin: 30px auto; }
+        .tabs { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; }
+        .tab-link { background: none; color: #888; border: none; padding: 12px 24px; font-size: 16px; cursor: pointer; }
+        .tab-link.active { color: #3a86ff; border-bottom: 3px solid #3a86ff; }
+        .tab-content { display: none; background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; }
+        .camera-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .video-feed { background: #000; height: 400px; display: flex; justify-content: center; align-items: center; border-radius: 4px; overflow: hidden; }
+        .log-box { background: #000; color: #0f0; padding: 15px; height: 300px; overflow-y: auto; font-family: monospace; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <h2>SOC Central Server</h2>
+        <h2>SOC SECURITY HUB</h2>
         <a href="/logout" class="logout-btn">Log Out</a>
     </nav>
 
     <div class="tab-container">
-        
         <div class="tabs">
-            <button class="tab-link active" onclick="openTab(event, 'Camera')">CAMERA</button>
-            <button class="tab-link" onclick="openTab(event, 'Logs')">LOGS</button>
+            <button class="tab-link active" onclick="openTab(event, 'Camera')">CAMERA FEED</button>
+            <button class="tab-link" onclick="openTab(event, 'Logs')">SECURITY LOGS</button>
         </div>
 
         <div id="Camera" class="tab-content" style="display: block;">
             <div class="camera-grid">
                 <div>
-                    <h3>Primary Camera (192.168.1.10)</h3>
+                    <h3>Active Stream: Wi-Fi Node</h3>
                     <div class="video-feed">
-                        <img src="" alt="Awaiting Video Signal..." style="max-width: 100%;">
+                        <img src="http://[INSERT_CAMERA_IP_HERE]/snapshot.cgi" alt="Establishing connection to local IP..." style="width: 100%;">
                     </div>
                 </div>
-                <div class="status-panel">
-                    <h3>System Status</h3>
-                    <p>Network: <span class="status-good">Secured</span></p>
-                    <hr style="border-color: #444;">
-                    <h3>Recent Alerts</h3>
-                    <p style="color: #aaa; font-size: 14px;">Listening for intrusion attempts...</p>
+                <div style="background: #252525; padding: 15px; border-radius: 4px;">
+                    <h4>System Status</h4>
+                    <p style="color: #0f0;">● SECURE</p>
+                    <p>Encrypted Tunnel: Active</p>
                 </div>
             </div>
         </div>
 
         <div id="Logs" class="tab-content">
-            <h3>Security Intrusion Logs</h3>
-            <p style="color: #aaa; font-size: 14px;">Real-time recording of failed authentication attempts.</p>
+            <h3>Intrusion Detection System (IDS)</h3>
             <div class="log-box">
-                > System initialized.<br>
-                > Honeypot active on port 5000.<br>
-                > Waiting for security events...<br>
-                </div>
+                <p>> [SYSTEM] Booting Security Modules...</p>
+                <p>> [IDS] Monitoring login/POST requests...</p>
+                <p>> [NET] Gateway established via Cloud-Hybrid link.</p>
+                <p style="color: #888;">(Check Railway "View Logs" for full intrusion history)</p>
+            </div>
         </div>
-
     </div>
 
     <script>
         function openTab(evt, tabName) {
-            // 1. Hide all elements with class="tab-content"
             var i, tabcontent, tablinks;
             tabcontent = document.getElementsByClassName("tab-content");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-
-            // 2. Remove the background color of all tablinks/buttons
+            for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
             tablinks = document.getElementsByClassName("tab-link");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-
-            // 3. Show the current tab, and add an "active" class to the button that opened the tab
+            for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
             document.getElementById(tabName).style.display = "block";
             evt.currentTarget.className += " active";
         }
     </script>
-
 </body>
 </html>
