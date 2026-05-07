@@ -7,20 +7,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = 'super_secret_exam_key' 
 
-# --- 1. Set up Intrusion Logging ---
-# Railway captures these logs. You can see them by clicking "View Logs" in your dashboard.
 logging.basicConfig(filename='security.log', level=logging.WARNING, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- 2. Set up Flask-Login ---
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Admin credentials - Username: admin | Password: password123
-users = {
-    "admin": generate_password_hash("password123") 
-}
+# Admin Account
+users = {"admin": generate_password_hash("root")}
 
 class User(UserMixin):
     def __init__(self, username):
@@ -32,8 +27,7 @@ def load_user(user_id):
         return User(user_id)
     return None
 
-# --- 3. Routes ---
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
     return redirect(url_for('login'))
 
@@ -49,7 +43,6 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))
         else:
-            # THIS IS YOUR HONEYPOT: This records the professor's failed attempts
             logging.warning(f"INTRUSION ALERT: Failed login attempt from IP: {client_ip} using username: {username}")
             flash('Invalid credentials')
     
@@ -67,6 +60,5 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    # Dynamically bind to the port Railway provides
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
