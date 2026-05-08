@@ -5,4 +5,4 @@ psycopg2-binary
 Flask-SQLAlchemy
 Flask-Limiter
 Flask-WTF
-pyOpenSSL
+gunicorn
