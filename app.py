@@ -13,10 +13,10 @@ from flask_wtf.csrf import CSRFProtect
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_production_key_123')
 csrf = CSRFProtect(app)
 
-db_url = os.environ.get('DATABASE_URL')
+db_url = os.environ.get('DATABASE_URL', 'sqlite:///system.db')
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
@@ -47,7 +47,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-admin_password = os.environ.get('ADMIN_PASSWORD', 'change_this_default_password')
+admin_password = os.environ.get('ADMIN_PASSWORD', 'admin')
 users = {"admin": generate_password_hash(admin_password)}
 
 class User(UserMixin):
